@@ -22,7 +22,8 @@ def calculate_all_tdee(data: pd.DataFrame, energy_per_weight: float, tdee_calc_w
     tdee_guess = calc_tdee_for_date(data, dates[window_int], energy_per_weight, tdee_calc_window)
     data.loc[dates[window_int], "TDEE_Guess"] = tdee_guess
     for date in dates[window_int+1:]:
-        tdee_guess = (tdee_smoothing_factor * calc_tdee_for_date(data, date, energy_per_weight, tdee_calc_window)
+        tdee_curr_date_guess = calc_tdee_for_date(data, date, energy_per_weight, tdee_calc_window)
+        tdee_guess = (tdee_smoothing_factor * tdee_curr_date_guess
         + (1-tdee_smoothing_factor) * tdee_guess)
         data.loc[date, "TDEE_Guess"] = tdee_guess
     return data
@@ -36,7 +37,6 @@ def calc_tdee_for_date(data: pd.DataFrame, date: datetime.date, energy_per_weigh
     dates: list = list(dates) # might use it as an iterator later
     days: np.array = np.array(range(1, len(dates)+1))
     weights: np.array = data.loc[dates, "Weight"].to_numpy()
-    print(weights)
     energies: np.array = data.loc[dates, "Energy"].to_numpy()
 
     weight_trend, _ = np.polyfit(days, weights, 1) # gives kg/day
