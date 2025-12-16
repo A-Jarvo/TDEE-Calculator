@@ -1,15 +1,37 @@
 import tkinter as tk
+from TDEE_calc import calculate_all_tdee
+from ioutils import read_input, save_data
+import pandas as pd
 
-def main():
+def main() -> None:
     app = appGUI()
 
-def clear_frame(frame):
+def clear_frame(frame: tk.Frame) -> None:
     for widget in frame.winfo_children():
         widget.destroy()
-    del frame
+
+def turn_dataframe_to_grid(root, df: pd.DataFrame) -> tk.Frame: 
+        df_frame: tk.Frame = tk.Frame(root)
+        cols: int = list(range(len(df.columns)))
+        rows: int = list(range(len(df.index)))
+        index = df.index
+        column_names = df.columns
+        column_names = [df.index.name, *column_names]
+        for col_num, col in enumerate(column_names):
+            col_cell = tk.Label(df_frame, text=str(col))
+            col_cell.grid(padx=10, pady=10, row=0, column=col_num)
+
+        for row in rows[1:]:
+            index_cell = tk.Label(df_frame, text=str(index[row]))
+            index_cell.grid(padx=10, pady=10, row=row, column=0)
+            for col in cols:
+                val = df.iloc[row, col]
+                cell = tk.Label(df_frame, text=str(val))
+                cell.grid(padx=10, pady=10, row=row, column=col+1)
+        return df_frame
 
 class appGUI:
-    def __init__(self):
+    def __init__(self) -> None:
         self.default_path = "data/sample_data.txt"
 
         self.root = tk.Tk()
@@ -17,9 +39,13 @@ class appGUI:
 
         self.main_get_path()
 
+        self.root.mainloop()
 
+    #def clear_frame(self) -> None:
+    #    for widget in self.primary_frame.winfo.children():
+    #        widget.destroy
 
-    def main_get_path(self):
+    def main_get_path(self) -> None:
         self.get_path_frame = tk.Frame()
         self.get_path_frame.pack()
         self.get_path_frame.welcome_label = tk.Label(self.get_path_frame, text="[Welcome Message]", font=("Arial", 25))
@@ -38,25 +64,35 @@ class appGUI:
         self.submit_button = tk.Button(self.get_path_frame, text="next step", command=self.post_path)
         self.submit_button.pack()
 
-        self.root.mainloop()  
-
-    def read_path(self, _):
+    def read_path(self, _) -> None:
         self.path = self.get_path_frame.path_entrypoint.get()
 
-    def use_default_path(self):
+    def use_default_path(self) -> None:
         self.path = self.default_path
+    
+    def print_path(self) -> None:
+        print(self.path)
 
-    def post_path(self):
-        clear_frame(self.get_path_frame)
+    def post_path(self) -> None:
         try:
-            self.path_label = tk.Label(self.root, text=self.path, font=("Arial, 50"))
+            self.path
         except AttributeError:
             print("no path was entered, using default")
-        self.path_label = tk.Label(self.root, text=self.default_path, font=("Arial, 50"))
+            self.path = self.default_path
+        try: 
+            self.raw_dataframe = read_input(self.path)
+        except FileNotFoundError:
+            self.failed_to_read_file_label = tk.Label(self.get_path_frame, text="Failed to read input file", font=("Arial", 50), fg="red")
+            self.failed_to_read_file_label.pack()
+            return
+        
+        clear_frame(self.get_path_frame)
+        self.path_label = tk.Label(self.root, text=self.path, font=("Arial, 50"))
         self.path_label.pack()
-
-    def print_path(self):
-        print(self.path)
+        self.raw_df_frame_tk: tk.Frame = turn_dataframe_to_grid(self.root, self.raw_dataframe)
+        self.raw_df_frame_tk.pack()
+    
+    
 
     
 
